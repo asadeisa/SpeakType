@@ -1,0 +1,16 @@
+{
+  "name": "speaktype",
+  "private": true,
+  "scripts": {
+    "dev:extension": "pnpm --filter @speaktype/extension dev",
+    "dev:backend": "pnpm --filter @speaktype/backend dev",
+    "build": "pnpm -r build",
+    "build:extension": "pnpm --filter @speaktype/extension build",
+    "build:backend": "pnpm --filter @speaktype/backend build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

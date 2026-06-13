@@ -1,0 +1,21 @@
+{
+  "name": "@speaktype/extension",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "typecheck": "vue-tsc --noEmit && wxt prepare"
+  },
+  "dependencies": {
+    "@speaktype/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@wxt-dev/module-vue": "^1.0.0",
+    "vue": "^3.5.0",
+    "wxt": "^0.20.0"
+  }
+}
