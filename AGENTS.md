@@ -41,8 +41,19 @@
 
 Guidance for AI agents working on **SpeakType**.
 
-> 🚧 **Reserved.** Project system structure and work organization will be defined
-> here in an upcoming session. Keep this file as the top-level entry point for agents.
+## PROJECT MEMORY (read before working)
+
+Durable project facts live in **`memory/`**. Read the relevant file(s) at the **start of any
+task** before proposing changes:
+
+- `memory/stack-decisions.md` — touching the stack, auth, ORM, STT/AI providers, or anything architectural
+- `memory/cost-and-free-tiers.md` — adding/changing a service or anything that might cost money
+- `memory/api-contract.md` — API routes, payload shapes, the extension↔backend boundary
+- `memory/security-and-performance.md` — auth, the audio path, uploads, rate limits, performance-sensitive code
+
+The build roadmap is in **`plan/`**; local analysis (AR/EN) is in `doc/analysis/`.
+Decisions in `memory/` are **locked** — don't silently swap a provider/library; if a decision
+must change, update the memory file and flag it (especially anything introducing cost).
 
 ## Encoding Rules (CRITICAL)
 Always preserve UTF-8 encoding for all files.
