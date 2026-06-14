@@ -12,8 +12,9 @@ and call the DeepSeek agent" type requests.
 Roster, routing, escalation, and fallback live in `.claude/agents.md` + `.claude/orchestrator.md`.
 This skill is only about **how to find the pane and make the call**.
 
-This `.claude` skill is the canonical Claude-side pane launcher. Other local-agent adaptations may
-exist under `.agents`, but they must keep paths, routing, and authority aligned with this file.
+This `.agents` copy is the broader local-agent adaptation of the canonical `.claude` skill. Keep
+paths, routing, and authority aligned with `.claude`; only adapt wording or tool names when a
+non-Claude runtime needs it.
 
 ---
 
@@ -26,7 +27,7 @@ Run these in order and pick the pane that passes every gate:
 3. Pick the **ideal pane** — the first one that is ALL of:
    - **Owned by your workspace** (listed by `pane_list` for your ws). Cross-workspace `terminal_send`
      is blocked.
-   - **Not the Claude Code session pane.** Detect it: `terminal_read` shows the Claude Code UI
+   - **Not the Codex session pane.** Detect it: `terminal_read` shows the Codex UI
      (`●`, "Called wmux", tool chatter). Never type into that pane.
    - **A free shell** (PowerShell/bash prompt like `PS C:\…>`) OR **already running our agent**
      (a `pi` TUI we own — reuse it, see Step 3). Never hijack a pane running someone else's TUI.
@@ -64,7 +65,7 @@ the agent open. → Name it yourself from the routing table, then tell the user 
 Guardrail: **never** send vision to DeepSeek or Qwen. State your pick in one sentence so the user
 can override.
 
-> Note: Sonnet and Haiku are Claude agents — run them with the `Agent` tool, NOT in a `pi` pane.
+> Note: Sonnet and Haiku are Codex agents — run them with the `Agent` tool, NOT in a `pi` pane.
 > This skill's pane mechanism is for the `pi` agents: **DeepSeek, Gemini, Qwen.**
 
 ---
@@ -123,7 +124,7 @@ Send the task in two moves: `terminal_send { ptyId, text }` then `terminal_send_
 
 ```
 1. a2a_whoami → my ws
-2. surface_list → pick free PowerShell pane I own, ≥72 cols  (skip the Claude Code pane)
+2. surface_list → pick free PowerShell pane I own, ≥72 cols  (skip the Codex pane)
 3. pane_set_metadata { label:"agent:deepseek", status:"warm" }
 4. if no warm deepseek pane: terminal_send the interactive `pi …deepseek…` line + enter
 5. terminal_send the task + enter

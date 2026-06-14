@@ -14,8 +14,15 @@ Opus stays responsible for the thinking that needs it:
 - The final decision and the answer to the user
 
 Opus is **not** the sole worker — it hands off heavy or repetitive execution.
+Opus is still the only orchestrator: it decides which agent works, what context
+the agent receives, when an agent should stop, when work escalates, and whether
+the result is accepted. Sub-agents may recommend escalation or a different route,
+but they do not self-organize or override Opus.
 
 ## Delegation policy: auto-delegate when worth it
+
+Delegation is an Opus decision. The goal is faster execution and lower waste, not
+delegation for its own sake.
 
 | Task type                         | Who handles it                              |
 | --------------------------------- | ------------------------------------------- |

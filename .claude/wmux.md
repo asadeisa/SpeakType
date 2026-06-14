@@ -68,7 +68,10 @@ mcp__wmux__a2a_task_send {
 
 ## Browser usage
 
-WMUX exposes `mcp__wmux__browser_*`. Allow browser-driven research/validation for **Opus, Sonnet,
-and Gemini** (vision-capable, can read screenshots). **Do not** hand browser/visual tasks to
-DeepSeek or Qwen — they are text-only. Keep browser sessions scoped to the task and close them
-(`browser_session_stop`) when done.
+Use the browser capability exposed by the current environment. Prefer WMUX browser tools when
+available; otherwise use the Codex Browser plugin / in-app browser, then Playwright when real
+browser automation is needed. Only ask the user when no browser capability is available.
+
+Allow browser-driven research/validation for **Opus, Sonnet, and Gemini** (vision-capable, can read
+screenshots). **Do not** hand browser/visual tasks to DeepSeek or Qwen — they are text-only. Keep
+browser sessions scoped to the task and close them when the active browser tool supports it.

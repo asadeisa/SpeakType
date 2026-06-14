@@ -5,7 +5,7 @@
 - Keep responses concise and to the point - unless the user asks otherwise
 - explain the terminal commands you are going to run before running them,in short 
 - use the terminal wmux tool to run service when every you see an ideal pane instead of runing it  in the background.  
-- Always run agent in new pane , if he is not already running in one , and if there is no ideal pane , ask the user to open a terminal beside you and run the agent there.
+- Prefer an existing warm, idle agent pane when it matches the needed agent. If no matching warm pane exists, run the agent in a free owned pane. If there is no ideal pane, ask the user to open a terminal beside you and run the agent there.
 ## PLANNING MODE
 
 - Always ask clarifying questions
@@ -43,3 +43,43 @@ Guidance for AI agents working on **SpeakType**.
 
 > 🚧 **Reserved.** Project system structure and work organization will be defined
 > here in an upcoming session. Keep this file as the top-level entry point for agents.
+
+## Encoding Rules (CRITICAL)
+Always preserve UTF-8 encoding for all files.
+- read this when you see files with arabic text or context:
+
+    Never convert Arabic text into escaped, ANSI, Windows-1252, or mojibake characters.
+    Before editing a file:
+    detect file encoding
+    preserve BOM and line endings
+    When saving files:
+    use UTF-8
+    do not change encoding unless explicitly requested
+    If Arabic text appears corrupted (example: ط§ظ„...):
+    stop editing
+    reload file using UTF-8
+    verify characters visually before saving
+    Never overwrite a file if encoding confidence is low.
+
+## Avoid Reading
+Do not scan:
+node_modules
+dist
+build
+coverage
+lockfiles unless dependency-related
+pnpm-lock.yaml unless dependency-related
+
+## Security Rules
+Never bypass ProtectedRoute
+Preserve RBAC behavior
+Validate uploads before storage operations
+Never expose secrets or service keys
+Preserve auth flow
+
+# Performance Rules
+Avoid unnecessary rerenders
+Avoid duplicate queries
+Lazy-load large routes when appropriate
+Keep edits localized
+Reuse code before abstracting

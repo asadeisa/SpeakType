@@ -8,7 +8,7 @@ How the team is organized and the delegation policy live in a separate file:
 
 ### When to read it
 
-Read `@doc/delegation.md` at the **start of any task** when:
+Read `@delegation.md` at the **start of any task** when:
 
 - You are deciding whether to do the work yourself or delegate it.
 - You are spawning or coordinating other agents (Sonnet, Haiku, or the team).
