@@ -1,0 +1,442 @@
+# Multi-Agent System Architecture Design
+
+I need you to design and implement the complete AI agent architecture for this project.
+
+## Before Starting
+
+Do not make assumptions.
+
+First, review the requirements and identify:
+
+* Missing information
+* Ambiguous requirements
+* Technical limitations
+* Potential architecture risks
+
+If anything is unclear, ask questions before generating the architecture.
+
+---
+
+# Main Goal
+
+Create a production-ready multi-agent system optimized for software engineering, automation, research, and terminal-based workflows.
+
+The architecture must assign each model a role based on its real strengths and weaknesses.
+
+Do not treat all models equally.
+
+Use each model only where it performs best.
+
+Define:
+
+* Agent roles
+* Responsibilities
+* Capabilities
+* Limitations
+* Routing rules
+* Escalation rules
+* Fallback rules
+* Communication patterns
+* WMUX integration
+
+Keep the design simple, maintainable, and practical.
+
+Avoid over-engineering.
+
+Avoid massive prompt files.
+
+Avoid excessive documentation.
+
+Use short, focused agent definitions.
+
+---
+
+# Agent Hierarchy
+
+## 1. Anthropic Opus 4.8
+
+### Role
+
+System Leader / Master Orchestrator
+
+### Responsibilities
+
+* Own the entire workflow
+* Receive all user requests first
+* Analyze and decompose tasks
+* Delegate work to specialized agents
+* Coordinate execution
+* Review outputs
+* Resolve conflicts
+* Validate results
+* Produce final decisions
+
+### Best At
+
+* Strategic reasoning
+* Complex planning
+* Architecture design
+* Multi-step problem solving
+* Agent coordination
+* Quality assurance
+* Technical leadership
+
+### Should Not
+
+* Spend time on trivial tasks
+* Handle repetitive implementation work when other agents can do it
+
+---
+
+## 2. Anthropic Sonnet 4.6
+
+### Role
+
+Primary Engineering Agent
+
+### Responsibilities
+
+* Main implementation model
+* Feature development
+* Refactoring
+* Documentation
+* Bug fixing
+* Code reviews
+* Engineering execution
+
+### Best At
+
+* General software development
+* Large implementation tasks
+* Code generation
+* Project maintenance
+* Technical writing
+
+### Should Not
+
+* Make final architecture decisions
+* Override Opus decisions
+
+### Escalate To
+
+* Opus for architecture and planning
+* DeepSeek when advanced code-analysis expertise is needed
+
+---
+
+## 3. Anthropic Haiku 4.5
+
+### Role
+
+Fast Utility Agent
+
+### Responsibilities
+
+* Quick tasks
+* Summaries
+* Classification
+* Monitoring
+* Status reporting
+* Small automations
+* Lightweight coding
+
+### Best At
+
+* Speed
+* Cheap execution
+* Repetitive tasks
+* Short analyses
+
+### Should Not
+
+* Perform complex reasoning
+* Design architecture
+* Analyze large codebases
+
+### Escalate To
+
+* Sonnet for engineering work
+* Opus for complex reasoning
+
+---
+
+## 4. DeepSeek Agent
+
+### Role
+
+Code Analysis Specialist
+
+### Responsibilities
+
+* Debugging
+* Root cause analysis
+* Algorithm design
+* Performance optimization
+* Technical investigations
+* Code architecture reviews
+
+### Best At
+
+* Deep code reasoning
+* Algorithms
+* Refactoring recommendations
+* Engineering analysis
+
+### Must Not Be Used For
+
+* Image analysis
+* Screenshot interpretation
+* OCR tasks
+* Visual UI reviews
+* Vision workflows
+* Multimedia analysis
+
+The system should actively prevent DeepSeek from receiving tasks that require vision or multimodal understanding.
+
+### Escalate To
+
+* Opus for final decisions
+* Sonnet for implementation
+
+---
+
+## 5. Gemini Flash 3.5 (Vertex AI)
+
+### Role
+
+Fallback & Recovery Agent
+
+### Responsibilities
+
+* Service continuity
+* Backup execution
+* Fast validation
+* Summarization
+* Classification
+* Overflow handling
+
+### Best At
+
+* High availability
+* Fast execution
+* General-purpose support
+
+### Use When
+
+* A primary model is unavailable
+* Rate limits are reached
+* Response latency becomes excessive
+* Temporary failover is required
+
+### Should Not
+
+* Lead architecture decisions
+* Replace Opus as orchestrator
+
+---
+
+## 6. Qwen2.5-Coder-7B (modal-qwen)
+
+### Role
+
+Lightweight Coding Agent
+
+### Responsibilities
+
+* Boilerplate generation
+* Unit tests
+* Small code patches
+* Formatting
+* Linting
+* Quick implementation tasks
+
+### Best At
+
+* Fast coding jobs
+* Repetitive engineering tasks
+
+### Should Not
+
+* Design systems
+* Make architectural decisions
+* Handle large-context reasoning
+
+### Escalate To
+
+* DeepSeek for advanced analysis
+* Sonnet for larger development tasks
+* Opus for architecture
+
+---
+
+# Routing Rules
+
+### Simple Tasks
+
+Route to:
+
+* Haiku 4.5
+* Qwen2.5-Coder
+
+Examples:
+
+* Summaries
+* Small scripts
+* Formatting
+* Unit tests
+* File cleanup
+
+---
+
+### Standard Development
+
+Route to:
+
+* Sonnet 4.6
+
+Examples:
+
+* Features
+* Refactoring
+* Documentation
+* General coding
+
+---
+
+### Advanced Engineering Analysis
+
+Route to:
+
+* DeepSeek
+
+Examples:
+
+* Debugging
+* Algorithm design
+* Performance optimization
+* Root cause investigations
+
+---
+
+### Architecture & Planning
+
+Route to:
+
+* Opus 4.8
+
+Examples:
+
+* System design
+* Multi-agent decisions
+* Technical strategy
+* Final validation
+
+---
+
+# Fallback Rules
+
+Primary fallback:
+
+* Gemini Flash 3.5
+
+Secondary fallback:
+
+* Sonnet 4.6
+
+Rules:
+
+* If an agent fails, use Gemini Flash.
+* If a provider is unavailable, use Gemini Flash.
+* If workload spikes occur, use Gemini Flash.
+* If execution must continue despite outages, use Gemini Flash.
+
+---
+
+# WMUX Integration
+
+This project runs inside WMUX.
+
+Design the system to maximize WMUX capabilities.
+
+## Required Usage
+
+### Session Awareness
+
+Agents should understand:
+
+* Active sessions
+* Running jobs
+* Session ownership
+* Current task state
+
+### Multi-Pane Execution
+
+Support:
+
+* One agent per pane
+* Parallel task execution
+* Background workers
+* Monitoring panes
+
+### Agent Coordination
+
+Support:
+
+* Agent-to-agent messaging
+* Shared task context
+* Progress updates
+* Work delegation
+
+### Browser Usage
+
+If WMUX supports browser control:
+
+* Define which agents can use browsers
+* Define research workflows
+* Define validation workflows
+* Define safety controls
+
+### Process Supervision
+
+Allow:
+
+* Opus supervising all agents
+* Agents working in separate panes
+* Parallel execution across multiple sessions
+* Monitoring and task recovery
+
+Example:
+
+* Opus = coordinator
+* Sonnet = implementation
+* DeepSeek = analysis
+* Qwen = quick code generation
+* Haiku = monitoring
+* Gemini = fallback
+
+---
+
+# Deliverables
+
+Generate:
+
+1. Agent architecture
+2. Agent definitions
+3. Routing logic
+4. Escalation logic
+5. Fallback strategy
+6. WMUX integration design
+7. Communication protocol
+8. Example workflows
+9. File structure
+10. Minimal agent prompt files
+
+Important:
+
+Keep everything lightweight.
+
+Prefer many small, clear files over large complex files.
+
+Focus on maintainability, reliability, and real-world engineering workflows.
+
+Do not create an overly complicated framework.

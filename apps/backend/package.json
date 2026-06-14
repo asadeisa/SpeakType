@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@speaktype/shared": "workspace:*",
-    "nuxt": "^3.16.0"
+    "nuxt": "^4.4.8"
   }
 }
