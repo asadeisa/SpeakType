@@ -6,6 +6,11 @@ phases has a stable, consistent base.
 
 **Cost:** Free. Neon, Upstash, Groq, Gemini all on free tiers. No paid step.
 
+## Load first
+- Skill: `.claude/skills/monorepo-gotchas/SKILL.md`
+- Memory: `memory/stack-decisions.md`, `memory/cost-and-free-tiers.md`
+- Code: root + `*/package.json`, `*/tsconfig.json`, `eslint.config.mjs`, `apps/backend/server/db/**`
+
 ## Tasks
 
 ### Docs & reference (no dependencies — done first)
