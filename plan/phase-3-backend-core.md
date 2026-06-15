@@ -5,6 +5,12 @@ working behind a provider-fallback gateway.
 
 **Cost:** Free (Groq + Gemini free tiers; keys server-side only).
 
+## Load first
+- Skill: `.claude/skills/nuxt/SKILL.md` (+ `drizzle` for DB work)
+- Memory: `memory/api-contract.md`, `memory/security-and-performance.md`, `memory/stack-decisions.md`
+- Contract: `packages/shared/src/{api-contract,schemas,constants}.ts`
+- Code: `apps/backend/server/**`
+
 ## Routes (from the design doc)
 - ☐ Auth: `POST /auth/login|register|logout|refresh`, `GET /auth/me` (BetterAuth)
 - ☐ Settings: `GET /settings`, `PUT /settings`

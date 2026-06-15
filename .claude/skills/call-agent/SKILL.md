@@ -17,6 +17,20 @@ exist under `.agents`, but they must keep paths, routing, and authority aligned 
 
 ---
 
+## Step 0 — Precondition: is wmux identity even working? (check FIRST)
+
+Pane-driving needs the MCP to know its workspace. **Call `a2a_whoami` first.** If it returns a
+workspace, continue. If it errors with **"Workspace identity unknown"**, **STOP — do not loop.**
+The MCP launched without `WMUX_WORKSPACE_ID` and needs a one-time fix the *user* must apply:
+
+> The fix is already written into `C:\Users\asad\.claude.json` (`mcpServers.wmux.env.WMUX_WORKSPACE_ID
+> = ws-aa3abf3c-…`), but env is read **only at MCP startup**. Ask the user to **`/mcp` → wmux →
+> reconnect** (or restart Claude Code). See memory [[wmux-identity-fix]].
+
+While identity is broken, **don't try to watch an agent in a pane.** Fall back to **headless
+`pi`** (`fast-delegate` skill — `$null | pi -a -p "<task>"`, no wmux needed) or the **Claude
+`Agent` tool**. Pick those over burning turns on a pane you can't drive.
+
 ## Step 1 — Find the ideal split terminal (the pane)
 
 Run these in order and pick the pane that passes every gate:

@@ -5,6 +5,13 @@ and inserts the transcript at the cursor — undo-safe.
 
 **Cost:** Free.
 
+## Load first
+- Skill: `.claude/skills/vue/SKILL.md` (+ `monorepo-gotchas` for build/typecheck)
+- Design: `DESIGN.md` (**required** — mic icon states + UI)
+- Memory: `memory/api-contract.md`, `memory/security-and-performance.md`
+- Contract: `packages/shared/src/{api-contract,schemas,constants}.ts`
+- Code: `apps/extension/**`
+
 ## Tasks
 - ☐ Field detection: `input`, `textarea`, `contenteditable` (Gmail/Notion/Slack/ChatGPT/LinkedIn)
 - ☐ Mic-icon injection in a **Shadow DOM** (style-isolated); attach on focus, detach on blur/removal

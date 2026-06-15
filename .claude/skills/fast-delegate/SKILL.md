@@ -25,14 +25,26 @@ headless.
 
 ---
 
+## Reliability first: prefer the Claude Agent tool
+
+`pi` is for reaching the **non-Claude** models (Gemini / DeepSeek / Qwen). For everything a
+Claude model can do, the **`Agent` tool (`sonnet-engineer`, `haiku-util`) is the reliable
+default** — it returns the result directly with no pane, no TUI, no stdin games. Reach for `pi`
+only when you specifically need Gemini/DeepSeek/Qwen (e.g. vision, a second opinion, or the
+user named them). When you do, follow the stdin rule below or it will hang.
+
 ## The one command
 
 Run from the repo root (cwd matters — pi acts on it):
 
 ```
-pi -a -p "<the full task>"
+$null | pi -a -p "<the full task>"
 ```
 
+- **CRITICAL — pipe `$null |`.** Headless `pi -p` reads stdin and **hangs forever** waiting for
+  EOF when launched from this harness (the background shell hands it an open stdin with no EOF).
+  Piping `$null |` closes stdin immediately so the run actually starts. This single fix is what
+  turned "pi hangs for an hour" into "pi answers in seconds." Never run `pi -p` without it here.
 - `-p` / `--print` → non-interactive: process the prompt and **exit** (blocks until finished).
 - `-a` / `--approve` → trust project-local files (loads AGENTS.md/CLAUDE.md context).
 - Defaults to provider **vertex**, model **gemini-3.5-flash** (from `~/.pi/agent/settings.json`).
@@ -74,13 +86,15 @@ Never send images to DeepSeek/Qwen.
 1. **Pick the agent** (default Gemini; use the roster for debug/boilerplate).
 2. **Write the task as one self-contained prompt** — what to do, which files to read, the hard
    rules, and "reply with X when done". The agent has its own read/edit/write/bash tools.
-3. **Run headless** via PowerShell (Bash tool is broken on this box):
+3. **Run headless** via PowerShell (Bash tool is broken on this box). **Pipe `$null |`** so
+   stdin gets EOF (see the CRITICAL note above — without it pi hangs forever):
    ```
    $env:NODE_OPTIONS='--dns-result-order=ipv4first --no-network-family-autoselection'
-   pi -a -p "<task>"
+   $null | pi -a -p "<task>"
    ```
-   Long tasks: run with `run_in_background: true` and read the output file when notified —
-   do **not** poll.
+   Long tasks: run with `run_in_background: true` and read the output when notified —
+   do **not** poll. For prompts >965 bytes, write them to a temp `.md` and point pi at it
+   (`$null | pi -a -p "Read ./.task-X.md and execute it fully."`); delete the temp file after.
 4. **Review the result** (stdout) and the files it changed (`git status` / `git diff`).
    Never pass delegated output to the user unchecked.
 5. **Report** who did the work and what changed.
@@ -89,6 +103,8 @@ Never send images to DeepSeek/Qwen.
 
 ## Gotchas (this Windows box)
 
+- **Headless `pi -p` hangs without `$null |`** (open stdin, no EOF). This is the #1 gotcha on
+  this box — always `$null | pi -a -p "<task>"`. (Details in "The one command" above.)
 - **Bash tool is broken** (`fork: Resource temporarily unavailable`, exit 254) and
   `Start-Sleep` is blocked → the `Monitor` tool can't pace waits. Headless `-p` blocks until
   done, so you don't need to wait/poll at all. Prefer **PowerShell** for shell work.
