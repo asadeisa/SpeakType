@@ -1,11 +1,22 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-export type RecorderState = 'idle' | 'appearing' | 'recording' | 'uploading' | 'success' | 'error';
+export type RecorderState =
+  | 'idle'
+  | 'appearing'
+  | 'recording'
+  | 'uploading'
+  | 'success'
+  | 'error';
 
 export const useRecorderStore = defineStore('recorder', () => {
   const currentState = ref<RecorderState>('idle');
   const errorMessage = ref<string | null>(null);
+
+  function setAppearing() {
+    currentState.value = 'appearing';
+    errorMessage.value = null;
+  }
 
   function startRecording() {
     currentState.value = 'recording';
@@ -26,7 +37,7 @@ export const useRecorderStore = defineStore('recorder', () => {
 
   function setError(errorMsg?: string) {
     currentState.value = 'error';
-    errorMessage.value = errorMsg || 'An error occurred';
+    errorMessage.value = errorMsg ?? 'An error occurred';
   }
 
   function reset() {
@@ -37,6 +48,7 @@ export const useRecorderStore = defineStore('recorder', () => {
   return {
     currentState,
     errorMessage,
+    setAppearing,
     startRecording,
     stopRecording,
     setUploading,
