@@ -8,5 +8,14 @@ export default defineConfig({
     description: 'Voice-to-text for every input on the web',
     permissions: ['storage', 'activeTab'],
     host_permissions: ['<all_urls>'],
+    commands: {
+      'toggle-dictation': {
+        suggested_key: {
+          default: 'Alt+Shift+W',
+          mac: 'MacCtrl+Shift+W',
+        },
+        description: 'Toggle SpeakType dictation',
+      },
+    },
   },
 })

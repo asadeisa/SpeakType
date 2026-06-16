@@ -1,4 +1,11 @@
-import { API_ROUTES, AUTH_HEADER, BEARER_PREFIX, DEFAULT_API_BASE_URL } from '@speaktype/shared';
+import {
+  API_ROUTES,
+  AUTH_HEADER,
+  BEARER_PREFIX,
+  DEFAULT_API_BASE_URL,
+  authTokensSchema,
+  userSchema,
+} from '@speaktype/shared';
 import type {
   Settings,
   UpdateSettingsInput,
@@ -7,6 +14,10 @@ import type {
   CleanupResponse,
   Language,
   CleanupMode,
+  LoginInput,
+  RegisterInput,
+  AuthTokens,
+  User,
 } from '@speaktype/shared';
 
 export class SpeakTypeApiClient {
@@ -55,6 +66,51 @@ export class SpeakTypeApiClient {
 
     return response.json() as Promise<T>;
   }
+
+  // ----------------------------- Auth methods --------------------------------
+
+  /**
+   * Sign in with email + password. Returns validated AuthTokens.
+   * Surfaces a clean error if the backend is not yet available (Phase 3 deferred).
+   */
+  async login(input: LoginInput): Promise<AuthTokens> {
+    const raw = await this.request<unknown>(API_ROUTES.auth.login, input);
+    return authTokensSchema.parse(raw);
+  }
+
+  /**
+   * Register a new account. Returns validated AuthTokens.
+   */
+  async register(input: RegisterInput): Promise<AuthTokens> {
+    const raw = await this.request<unknown>(API_ROUTES.auth.register, input);
+    return authTokensSchema.parse(raw);
+  }
+
+  /**
+   * Sign out — revokes the refresh token server-side (fire-and-forget; token is
+   * already cleared in storage by the auth store before this returns).
+   */
+  async logout(): Promise<void> {
+    await this.request<unknown>(API_ROUTES.auth.logout);
+  }
+
+  /**
+   * Rotate the access token using a valid refresh token. Returns new AuthTokens.
+   */
+  async refresh(refreshToken: string): Promise<AuthTokens> {
+    const raw = await this.request<unknown>(API_ROUTES.auth.refresh, { refreshToken });
+    return authTokensSchema.parse(raw);
+  }
+
+  /**
+   * Fetch the currently authenticated user profile.
+   */
+  async getMe(): Promise<User> {
+    const raw = await this.request<unknown>(API_ROUTES.auth.me);
+    return userSchema.parse(raw);
+  }
+
+  // ----------------------------- Usage / quota -------------------------------
 
   async getQuota(): Promise<Quota> {
     try {
