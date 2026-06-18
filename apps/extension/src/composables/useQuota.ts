@@ -2,7 +2,7 @@
  * useQuota — cached quota helper for the SpeakType extension.
  * Avoids a network hit before every recording by caching the result with a TTL.
  */
-import { api } from '@/services/api';
+import { getQuotaViaBackground } from '@/services/content-api';
 import type { Quota } from '@speaktype/shared';
 
 const CACHE_TTL_MS = 60_000; // 60 seconds
@@ -45,7 +45,7 @@ export function useQuota(): UseQuotaReturn {
 
   async function checkQuota(): Promise<CheckQuotaResult> {
     if (!_isFresh()) {
-      const quota = await api.getQuota();
+      const quota = await getQuotaViaBackground();
       _cache = { quota, fetchedAt: Date.now() };
     }
 
@@ -57,7 +57,9 @@ export function useQuota(): UseQuotaReturn {
   }
 
   return {
-    get canRecord() { return canRecordNow(); },
+    get canRecord() {
+      return canRecordNow();
+    },
     checkQuota,
   };
 }

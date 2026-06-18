@@ -1,14 +1,8 @@
 <template>
   <div class="popup-root">
     <!-- Top bar -->
-    <header
-      class="top-bar"
-      role="banner"
-    >
-      <span
-        class="top-bar__logo"
-        aria-hidden="true"
-      >
+    <header class="top-bar" role="banner">
+      <span class="top-bar__logo" aria-hidden="true">
         <svg
           width="22"
           height="22"
@@ -20,13 +14,7 @@
           stroke-linejoin="round"
           aria-hidden="true"
         >
-          <rect
-            x="9"
-            y="2.5"
-            width="6"
-            height="11"
-            rx="3"
-          />
+          <rect x="9" y="2.5" width="6" height="11" rx="3" />
           <path d="M5.5 11a6.5 6.5 0 0 0 13 0" />
           <path d="M12 17.5V21" />
           <path d="M8.5 21h7" />
@@ -42,15 +30,8 @@
     <main class="popup-main">
       <!-- ======================== SIGNED-IN VIEW ======================== -->
       <template v-if="status === 'signed-in'">
-        <div
-          class="user-card"
-          role="region"
-          aria-label="Account"
-        >
-          <div
-            class="user-card__avatar"
-            aria-hidden="true"
-          >
+        <div class="user-card" role="region" aria-label="Account">
+          <div class="user-card__avatar" aria-hidden="true">
             {{ avatarInitial }}
           </div>
           <div class="user-card__info">
@@ -64,30 +45,24 @@
           <span class="user-card__plan">{{ planLabel }}</span>
         </div>
 
-        <div
-          class="status-pill status-pill--ready"
-          role="status"
-          aria-live="polite"
-        >
-          <span
-            class="status-pill__dot"
-            aria-hidden="true"
-          />
+        <div class="status-pill status-pill--ready" role="status" aria-live="polite">
+          <span class="status-pill__dot" aria-hidden="true" />
           Ready to dictate
         </div>
 
-        <div
-          class="shortcut-hint"
-          role="note"
-        >
-          <span class="hint-label">Shortcut</span>
-          <kbd class="kbd">{{ shortcutKey }}</kbd>
-          <a
-            class="hint-link"
-            href="chrome://extensions/shortcuts"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Rebind</a>
+        <div class="shortcut-hint" role="note">
+          <div class="shortcut-hint__main">
+            <span class="hint-label">Shortcut</span>
+            <kbd class="kbd">{{ shortcutKey }}</kbd>
+            <a
+              class="hint-link"
+              href="chrome://extensions/shortcuts"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Rebind</a
+            >
+          </div>
+          <span class="shortcut-hint__helper">Tap to toggle · hold to talk</span>
         </div>
 
         <button
@@ -102,25 +77,15 @@
 
       <!-- ======================= LOADING / INIT ========================= -->
       <template v-else-if="status === 'authenticating'">
-        <div
-          class="loading-row"
-          role="status"
-          aria-live="polite"
-          aria-label="Loading"
-        >
-          <div
-            class="spinner"
-            aria-hidden="true"
-          />
+        <div class="loading-row" role="status" aria-live="polite" aria-label="Loading">
+          <div class="spinner" aria-hidden="true" />
           <span class="loading-text">Just a moment…</span>
         </div>
       </template>
 
       <!-- ==================== SIGNED-OUT / AUTH FORM ==================== -->
       <template v-else>
-        <p class="auth-intro">
-          Sign in to sync your settings, quota, and history across devices.
-        </p>
+        <p class="auth-intro">Sign in to sync your settings, quota, and history across devices.</p>
 
         <!-- Error banner -->
         <div
@@ -137,17 +102,15 @@
             fill="currentColor"
             aria-hidden="true"
           >
-            <path d="M12 2 1 21h22L12 2Zm0 6a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Zm0 9.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Z" />
+            <path
+              d="M12 2 1 21h22L12 2Zm0 6a1 1 0 0 1 1 1v5a1 1 0 1 1-2 0V9a1 1 0 0 1 1-1Zm0 9.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5Z"
+            />
           </svg>
           <span>{{ errorMessage }}</span>
         </div>
 
         <!-- Tab switcher (segmented control) -->
-        <div
-          class="auth-tabs"
-          role="tablist"
-          aria-label="Authentication mode"
-        >
+        <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
           <button
             id="tab-signin"
             class="auth-tab"
@@ -185,10 +148,7 @@
           @submit.prevent="handleSignIn"
         >
           <div class="field">
-            <label
-              class="field__label"
-              for="signin-email"
-            >Email</label>
+            <label class="field__label" for="signin-email">Email</label>
             <input
               id="signin-email"
               v-model="email"
@@ -199,13 +159,10 @@
               required
               aria-required="true"
               placeholder="you@example.com"
-            >
+            />
           </div>
           <div class="field">
-            <label
-              class="field__label"
-              for="signin-password"
-            >Password</label>
+            <label class="field__label" for="signin-password">Password</label>
             <input
               id="signin-password"
               v-model="password"
@@ -216,13 +173,9 @@
               required
               aria-required="true"
               placeholder="Your password"
-            >
+            />
           </div>
-          <button
-            class="btn btn--filled btn--full"
-            type="submit"
-            :disabled="!canSubmit"
-          >
+          <button class="btn btn--filled btn--full" type="submit" :disabled="!canSubmit">
             Sign in
           </button>
         </form>
@@ -238,10 +191,7 @@
           @submit.prevent="handleRegister"
         >
           <div class="field">
-            <label
-              class="field__label"
-              for="reg-name"
-            >
+            <label class="field__label" for="reg-name">
               Name <span class="field__optional">(optional)</span>
             </label>
             <input
@@ -252,13 +202,10 @@
               name="name"
               autocomplete="name"
               placeholder="Your name"
-            >
+            />
           </div>
           <div class="field">
-            <label
-              class="field__label"
-              for="reg-email"
-            >Email</label>
+            <label class="field__label" for="reg-email">Email</label>
             <input
               id="reg-email"
               v-model="email"
@@ -269,13 +216,10 @@
               required
               aria-required="true"
               placeholder="you@example.com"
-            >
+            />
           </div>
           <div class="field">
-            <label
-              class="field__label"
-              for="reg-password"
-            >Password</label>
+            <label class="field__label" for="reg-password">Password</label>
             <input
               id="reg-password"
               v-model="password"
@@ -286,14 +230,10 @@
               required
               aria-required="true"
               placeholder="Min. 8 characters"
-            >
+            />
             <span class="field__help">At least 8 characters.</span>
           </div>
-          <button
-            class="btn btn--filled btn--full"
-            type="submit"
-            :disabled="!canSubmit"
-          >
+          <button class="btn btn--filled btn--full" type="submit" :disabled="!canSubmit">
             Create account
           </button>
         </form>
@@ -301,18 +241,11 @@
     </main>
 
     <!-- Footer -->
-    <footer
-      v-if="status !== 'signed-in'"
-      class="popup-footer"
-    >
-      <svg
-        width="13"
-        height="13"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1V11.9Z" />
+    <footer v-if="status !== 'signed-in'" class="popup-footer">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path
+          d="M12 1 3 5v6c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V5l-9-4Zm0 10.9h7c-.5 4-3.2 7.6-7 8.8V12H5V6.3l7-3.1V11.9Z"
+        />
       </svg>
       <span>Audio is processed securely and never stored.</span>
     </footer>
@@ -340,13 +273,9 @@ export default defineComponent({
     const name = ref('');
 
     // Derived
-    const canSubmit = computed(
-      () => email.value.length > 0 && password.value.length >= 8,
-    );
+    const canSubmit = computed(() => email.value.length > 0 && password.value.length >= 8);
 
-    const displayName = computed(
-      () => user.value?.name ?? user.value?.email ?? 'Signed in',
-    );
+    const displayName = computed(() => user.value?.name ?? user.value?.email ?? 'Signed in');
 
     const avatarInitial = computed(() => {
       const src = user.value?.name ?? user.value?.email ?? '?';
@@ -358,10 +287,9 @@ export default defineComponent({
       return plan === 'pro' ? 'Pro' : 'Free';
     });
 
-    const isMac = computed(() => navigator.platform.toUpperCase().startsWith('MAC'));
-    const shortcutKey = computed(() =>
-      isMac.value ? 'Ctrl+Shift+W' : 'Alt+Shift+W',
-    );
+    // The primary trigger is the page-level tap-or-hold gesture handled in
+    // content.ts (matchesCombo = Ctrl + Space), so it's the same on every OS.
+    const shortcutKey = computed(() => 'Ctrl + Space');
 
     // Actions
     function switchMode(next: 'signin' | 'register') {
@@ -542,11 +470,15 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner { animation: none; }
+  .spinner {
+    animation: none;
+  }
 }
 
 /* ---- Error banner ---- */
@@ -589,9 +521,10 @@ body {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--st-dur-short) var(--st-ease-standard),
-              color var(--st-dur-short) var(--st-ease-standard),
-              box-shadow var(--st-dur-short) var(--st-ease-standard);
+  transition:
+    background var(--st-dur-short) var(--st-ease-standard),
+    color var(--st-dur-short) var(--st-ease-standard),
+    box-shadow var(--st-dur-short) var(--st-ease-standard);
 }
 
 .auth-tab:focus-visible {
@@ -646,9 +579,10 @@ body {
   font-family: inherit;
   font-size: 14px;
   box-shadow: var(--st-elev-soft);
-  transition: border-color var(--st-dur-short) var(--st-ease-standard),
-              background var(--st-dur-short) var(--st-ease-standard),
-              box-shadow var(--st-dur-medium) var(--st-ease-standard);
+  transition:
+    border-color var(--st-dur-short) var(--st-ease-standard),
+    background var(--st-dur-short) var(--st-ease-standard),
+    box-shadow var(--st-dur-medium) var(--st-ease-standard);
   outline: none;
 }
 
@@ -664,8 +598,9 @@ body {
 .field__input:focus {
   background: var(--st-surface);
   border-color: var(--st-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--st-primary) 18%, transparent),
-              var(--st-elev-soft);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--st-primary) 18%, transparent),
+    var(--st-elev-soft);
 }
 
 /* ---- Buttons ---- */
@@ -682,16 +617,19 @@ body {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--st-dur-short) var(--st-ease-standard),
-              box-shadow var(--st-dur-short) var(--st-ease-standard),
-              transform var(--st-dur-short) var(--st-ease-standard),
-              filter var(--st-dur-short) var(--st-ease-standard),
-              opacity var(--st-dur-short) var(--st-ease-standard);
+  transition:
+    background var(--st-dur-short) var(--st-ease-standard),
+    box-shadow var(--st-dur-short) var(--st-ease-standard),
+    transform var(--st-dur-short) var(--st-ease-standard),
+    filter var(--st-dur-short) var(--st-ease-standard),
+    opacity var(--st-dur-short) var(--st-ease-standard);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .btn--filled:hover:not(:disabled),
-  .btn--filled:active:not(:disabled) { transform: none; }
+  .btn--filled:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .btn:focus-visible {
@@ -730,11 +668,20 @@ body {
 .btn--tonal {
   background: var(--st-primary-container);
   color: var(--st-on-primary-container);
+  margin-top: var(--st-space-8);
+  box-shadow: 0 1px 2px rgba(66, 99, 235, 0.05);
 }
 
 .btn--tonal:hover:not(:disabled) {
-  filter: brightness(0.97);
+  background: color-mix(in srgb, var(--st-primary) 10%, var(--st-primary-container));
   box-shadow: var(--st-elev-1);
+  transform: translateY(-1px);
+}
+
+.btn--tonal:active:not(:disabled) {
+  background: color-mix(in srgb, var(--st-primary) 20%, var(--st-primary-container));
+  transform: translateY(0);
+  filter: brightness(0.95);
 }
 
 /* ---- Signed-in: user card ---- */
@@ -742,16 +689,20 @@ body {
   display: flex;
   align-items: center;
   gap: var(--st-space-12);
-  background: var(--st-surface-variant);
+  background: var(--st-surface-container);
+  border: 1px solid color-mix(in srgb, var(--st-outline) 10%, transparent);
   border-radius: var(--st-radius-lg);
-  padding: var(--st-space-12);
+  padding: var(--st-space-12) var(--st-space-16);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 4px 12px rgba(66, 99, 235, 0.03);
 }
 
 .user-card__avatar {
   width: 44px;
   height: 44px;
   border-radius: var(--st-radius-full);
-  background: var(--st-primary);
+  background: var(--st-brand-grad);
   color: var(--st-on-primary);
   display: flex;
   align-items: center;
@@ -759,6 +710,8 @@ body {
   font-size: 18px;
   font-weight: 600;
   flex-shrink: 0;
+  border: 2px solid var(--st-surface);
+  box-shadow: 0 2px 8px rgba(66, 99, 235, 0.15);
 }
 
 .user-card__info {
@@ -771,7 +724,7 @@ body {
 
 .user-card__name {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--st-on-surface);
   overflow: hidden;
@@ -783,14 +736,14 @@ body {
   margin: 0;
   font-size: 12px;
   color: var(--st-on-surface-variant);
+  opacity: 0.85;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .user-card__plan {
-  align-self: flex-start;
-  padding: 2px 10px;
+  padding: 4px 10px;
   background: var(--st-primary-container);
   color: var(--st-on-primary-container);
   border-radius: var(--st-radius-full);
@@ -798,6 +751,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.03em;
   flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--st-primary) 12%, transparent);
 }
 
 /* ---- Status pill ---- */
@@ -808,9 +762,10 @@ body {
   padding: var(--st-space-8) var(--st-space-12);
   border-radius: var(--st-radius-md);
   font-size: 13px;
-  font-weight: 500;
-  background: color-mix(in srgb, var(--st-secondary) 12%, var(--st-surface));
-  color: color-mix(in srgb, var(--st-secondary) 80%, #000);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--st-secondary) 8%, var(--st-surface));
+  color: color-mix(in srgb, var(--st-secondary) 85%, #000);
+  border: 1px solid color-mix(in srgb, var(--st-secondary) 15%, transparent);
 }
 
 .status-pill__dot {
@@ -819,48 +774,111 @@ body {
   border-radius: var(--st-radius-full);
   background: var(--st-secondary);
   flex-shrink: 0;
+  position: relative;
+}
+
+/* Pulsing effect */
+.status-pill__dot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--st-radius-full);
+  background: var(--st-secondary);
+  opacity: 0.4;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pill__dot::after {
+    animation: none;
+    display: none;
+  }
 }
 
 /* ---- Shortcut hint ---- */
 .shortcut-hint {
   display: flex;
+  flex-direction: column;
+  gap: var(--st-space-4);
+  padding: var(--st-space-12);
+  background: var(--st-surface-container);
+  border-radius: var(--st-radius-md);
+  border: 1px solid color-mix(in srgb, var(--st-outline) 8%, transparent);
+}
+
+.shortcut-hint__main {
+  display: flex;
   align-items: center;
   gap: var(--st-space-8);
-  padding: 0 var(--st-space-4);
+  width: 100%;
+}
+
+.shortcut-hint__helper {
+  font-size: 11px;
+  color: var(--st-on-surface-variant);
+  opacity: 0.7;
+  padding-left: var(--st-space-4);
+  letter-spacing: 0.01em;
 }
 
 .hint-label {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--st-on-surface-variant);
 }
 
 .kbd {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   padding: 3px 8px;
-  background: var(--st-surface-variant);
-  border: 1px solid var(--st-outline);
-  border-radius: var(--st-radius-sm);
+  background: var(--st-surface-container-high);
+  border: 1px solid color-mix(in srgb, var(--st-outline) 30%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--st-outline) 45%, transparent);
+  border-radius: 6px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--st-on-surface);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 }
 
 .hint-link {
   margin-left: auto;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--st-primary);
   text-decoration: none;
+  transition:
+    color var(--st-dur-short) var(--st-ease-standard),
+    opacity var(--st-dur-short) var(--st-ease-standard);
 }
 
 .hint-link:hover {
-  text-decoration: underline;
+  opacity: 0.8;
 }
 
 .hint-link:focus-visible {
   outline: 2px solid var(--st-primary);
-  border-radius: 2px;
+  outline-offset: 2px;
+  border-radius: var(--st-radius-sm);
 }
 
 /* ---- Footer ---- */

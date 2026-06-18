@@ -1,16 +1,21 @@
-/**
- * Drizzle client — Neon serverless HTTP driver.
- *
- * Uses the pooled DATABASE_URL at runtime (Nitro / Neon HTTP pool).
- * drizzle-kit migrations use DATABASE_URL_UNPOOLED (see drizzle.config.ts).
- */
-
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
 import * as schema from './schema';
+import * as authSchema from './auth-schema';
 
-const sql = neon(process.env.DATABASE_URL!);
+const databaseUrl =
+  typeof useRuntimeConfig !== 'undefined'
+    ? (useRuntimeConfig().databaseUrl as string | undefined)
+    : process.env.DATABASE_URL;
 
-export const db = drizzle(sql, { schema });
+if (!databaseUrl) {
+  throw new Error('Database connection string is missing from runtime config');
+}
 
-export type Database = typeof db;
+const pool = new Pool({ connectionString: databaseUrl });
+
+// Include the BetterAuth tables (user/session/account/verification) so the
+// Drizzle instance — and therefore the BetterAuth drizzleAdapter — can resolve them.
+export const db = drizzle(pool, { schema: { ...schema, ...authSchema } });
+
+export * from './schema';
