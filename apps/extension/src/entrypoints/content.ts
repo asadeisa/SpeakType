@@ -1,7 +1,10 @@
 import { createApp, defineComponent, h, ref } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import { seedApiToken, watchAccessToken } from '@/services/auth-storage';
-import { api } from '@/services/api';
+import {
+  transcribeViaBackground,
+  cleanupViaBackground,
+  getSettingsViaBackground,
+} from '@/services/content-api';
 import { useRecorderStore } from '@/stores/recorder';
 import { useSettingsStore } from '@/stores/settings';
 import { useRecorder } from '@/composables/useRecorder';
@@ -22,9 +25,7 @@ const shadowTokens = tokensRaw.replace(/:root/g, ':host');
 // ──────────────────────────────────────────────
 // Editable field detection
 // ──────────────────────────────────────────────
-const TEXT_INPUT_TYPES = new Set([
-  'text', 'search', 'email', 'url', 'tel', '',
-]);
+const TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', '']);
 
 function isEditableField(el: Element): el is HTMLElement {
   if (el instanceof HTMLTextAreaElement) return true;
@@ -42,13 +43,8 @@ function isEditableField(el: Element): el is HTMLElement {
 function buildWebsiteContext(target: HTMLElement): string {
   const label =
     target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
-      ? target.placeholder ||
-        target.getAttribute('aria-label') ||
-        target.name ||
-        ''
-      : target.getAttribute('aria-label') ||
-        target.getAttribute('data-placeholder') ||
-        '';
+      ? target.placeholder || target.getAttribute('aria-label') || target.name || ''
+      : target.getAttribute('aria-label') || target.getAttribute('data-placeholder') || '';
   const parts: string[] = [location.hostname, document.title.slice(0, 80)];
   if (label) parts.push(label.slice(0, 80));
   return parts.filter(Boolean).join(' | ');
@@ -94,6 +90,7 @@ function onPreviewAccept(text: string): void {
   setTimeout(() => recorderStore.reset(), 1500);
   _resolveConfirm?.();
   _resolveConfirm = null;
+  maybeDetachAfterPreview();
 }
 
 function onPreviewReject(): void {
@@ -103,6 +100,22 @@ function onPreviewReject(): void {
   recorderStore.reset();
   _resolveConfirm?.();
   _resolveConfirm = null;
+  maybeDetachAfterPreview();
+}
+
+/**
+ * After the review card closes, focus may no longer be on an editable field
+ * (the card lived in the shadow DOM). Tear the mic down cleanly in that case so
+ * it doesn't linger at the bottom of the page.
+ */
+function maybeDetachAfterPreview(): void {
+  setTimeout(() => {
+    if (_recording || _showPreview.value) return;
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || !isEditableField(active)) {
+      detachMic();
+    }
+  }, 150);
 }
 
 // ──────────────────────────────────────────────
@@ -125,12 +138,12 @@ async function uploadAndApply(
   recorderStore.setUploading();
 
   try {
-    const audioResp = await api.transcribe(blob, durationSeconds, settings.language);
+    const audioResp = await transcribeViaBackground(blob, durationSeconds, settings.language);
     let transcript = audioResp.transcript;
 
     if (settings.autoCleanup) {
       try {
-        const cleanupResp = await api.cleanup(transcript, 'light', wsContext);
+        const cleanupResp = await cleanupViaBackground(transcript, 'light', wsContext);
         transcript = cleanupResp.cleanedText;
       } catch {
         // Keep original transcript on cleanup failure
@@ -192,9 +205,7 @@ async function runToggle(activeField: HTMLElement): Promise<void> {
   // ── Start a fresh recording ──
   const { allowed, quota } = await quotaHelper.checkQuota();
   if (!allowed) {
-    recorderStore.setError(
-      `Quota exhausted (${quota.remainingSeconds}s remaining).`,
-    );
+    recorderStore.setError(`Quota exhausted (${quota.remainingSeconds}s remaining).`);
     return;
   }
 
@@ -326,7 +337,10 @@ function onFocusIn(e: FocusEvent): void {
 function onFocusOut(): void {
   _blurTimer = setTimeout(() => {
     _blurTimer = null;
-    if (!_recording) detachMic();
+    // Don't tear down while recording or while the review card is open — the
+    // card lives in a separate shadow host, so clicking it (Edit/Accept/Reject)
+    // blurs the page field and would otherwise destroy the card mid-interaction.
+    if (!_recording && !_showPreview.value) detachMic();
   }, 120);
 }
 
@@ -345,10 +359,7 @@ function startObserver(): void {
     const mountedField = _currentMount.field;
     for (const mutation of mutations) {
       for (const node of Array.from(mutation.removedNodes)) {
-        if (
-          node === mountedField ||
-          (node instanceof HTMLElement && node.contains(mountedField))
-        ) {
+        if (node === mountedField || (node instanceof HTMLElement && node.contains(mountedField))) {
           detachMic();
           return;
         }
@@ -443,17 +454,11 @@ function onKeyUp(e: KeyboardEvent): void {
 export default defineContentScript({
   matches: ['<all_urls>'],
   async main() {
-    // Seed API client with stored token
-    await seedApiToken();
-
-    // React to login/logout from the popup
-    watchAccessToken((token) => {
-      api.setToken(token);
-    });
-
-    // Load user settings from backend (falls back to defaults on error)
+    // The background service worker owns the API token and makes the actual
+    // backend calls (content-script fetches are blocked by CORS on the host
+    // page's origin). Load settings through the background proxy.
     try {
-      const remoteSettings = await api.getSettings();
+      const remoteSettings = await getSettingsViaBackground();
       useSettingsStore(pinia).setSettings(remoteSettings);
     } catch {
       // Use default store values

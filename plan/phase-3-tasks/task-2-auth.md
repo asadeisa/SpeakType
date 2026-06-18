@@ -85,8 +85,11 @@ Validate every body with the shared Zod schema; on Zod failure return `fail(even
 ## Constraints
 - GLOBAL HARD RULES. Response field names/types must equal `authTokensSchema` / `userSchema`
   **exactly** (the extension `.parse()`s them).
-- `jose` and `@upstash/redis` are installed by the orchestrator before this task — import
-  `jose` normally. If absent, list it and stop (don't install).
+- **Dependencies — YOU add them now (the orchestrator no longer pre-installs):** add
+  `jose` (`"^5"`) and `@upstash/redis` (`"^1"`) to the `dependencies` block of
+  `apps/backend/package.json`, then import them normally. You **cannot** run `pnpm install`
+  (your shell is broken) — after editing `package.json`, state clearly in your report that a
+  `pnpm install` must be run, and stop. Do not invent versions beyond the `^5` / `^1` ranges.
 - Never log tokens or password values. Never store a raw refresh token.
 
 ## Do NOT run anything

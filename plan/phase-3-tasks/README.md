@@ -32,6 +32,8 @@ agent **lists it and stops** — it does not install anything.
 | 3 | Middleware: CORS → auth → rate-limit → quota | `task-3-middleware.md` | 1, 2 |
 | 4 | Services: STT (Groq), Cleanup (Gemini), Quota | `task-4-services.md` | 1 |
 | 5 | Feature routes: settings, usage, audio, cleanup | `task-5-routes.md` | 2, 3, 4 |
+| 6 | Review, harden & prove (phase exit gate) | `task-6-review-hardening.md` | 1–5 |
+| 7 | Final fixes: green the gate + close 3 robustness gaps | `task-7-final-fixes.md` | 6 |
 
 ### Orchestrator-only steps (NOT for the agent)
 - **Before Task 2:** install `jose` and `@upstash/redis` in `apps/backend`.
