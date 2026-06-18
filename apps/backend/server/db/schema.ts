@@ -46,9 +46,14 @@ export const refreshTokens = pgTable('refresh_tokens', {
 
 export const subscriptions = pgTable('subscriptions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').notNull(),
+  userId: text('user_id').notNull().unique(), // one subscription per user (enables future upsert-by-user)
   plan: planEnum('plan').default('free').notNull(),
   status: text('status').default('active').notNull(),
+  stripeCustomerId: text('stripe_customer_id').unique(), // NEW · nullable
+  stripeSubscriptionId: text('stripe_subscription_id').unique(), // NEW · nullable
+  priceId: text('price_id'), // NEW · nullable
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }), // NEW · nullable
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(), // NEW
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

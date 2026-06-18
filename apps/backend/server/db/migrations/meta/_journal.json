@@ -15,6 +15,13 @@
       "when": 1781698595755,
       "tag": "0001_empty_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781770455784,
+      "tag": "0002_mean_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

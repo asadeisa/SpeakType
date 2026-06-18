@@ -37,5 +37,17 @@ export default tseslint.config(
         ...globals.browser,
       },
     },
+    rules: {
+      // Allow intentional non-use via a leading underscore (e.g. `_rawBody`,
+      // unused destructured rest, caught errors). Standard TS convention.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
   },
 );

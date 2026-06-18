@@ -16,7 +16,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // Public paths that bypass auth
-  const publicPaths = ['/api/auth/login', '/api/auth/register', '/api/auth/refresh'];
+  const publicPaths = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/refresh',
+    '/api/webhooks/stripe',
+  ];
 
   const pathWithoutQuery = path.split('?')[0] || '';
   if (publicPaths.includes(pathWithoutQuery)) {
