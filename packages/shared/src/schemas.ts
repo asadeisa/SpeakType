@@ -97,6 +97,18 @@ export const cleanupResponseSchema = z.object({
   cleanedText: z.string(),
 });
 
+/* --------------------------------- Billing --------------------------------- */
+
+export const billingStatusSchema = z.object({
+  enabled: z.boolean(), // false for the whole MVP (Stripe deferred)
+  plan: z.enum(PLANS), // the caller's current plan (from resolvePlan)
+  message: z.string(), // human-readable "billing is disabled" note
+});
+
+export const webhookAckSchema = z.object({
+  received: z.boolean(), // always true; Stripe only needs a fast 200
+});
+
 /* ------------------------------ Shared helpers ----------------------------- */
 
 export const errorResponseSchema = z.object({
@@ -125,3 +137,5 @@ export type AudioResponse = z.infer<typeof audioResponseSchema>;
 export type CleanupRequest = z.infer<typeof cleanupRequestSchema>;
 export type CleanupResponse = z.infer<typeof cleanupResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
+export type BillingStatus = z.infer<typeof billingStatusSchema>;
+export type WebhookAck = z.infer<typeof webhookAckSchema>;
