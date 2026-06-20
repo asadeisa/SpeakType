@@ -9,8 +9,8 @@
 
 ## DELEGATING TO PI AGENTS (long prompts)
 
-- The terminal command parser caps a single command at **965 bytes**. A long `pi -a -p "<prompt>"` will fail with `Command too long for parsing`.
-- **Always** for any non-trivial pi prompt: write the full prompt to a temp markdown file in the repo (e.g. `.task-<name>.md`), then invoke pi with a short command that tells it to read and execute that file: `pi -a -p "Read ./.task-<name>.md and execute it fully."` (pi has repo file access via `-a`).
+- ⛔ **pi agents (Gemini/DeepSeek/Qwen) run LIVE in a WMUX pane in Workspace 1 — never headless, never in the background.** See the `call-agent` skill. No drivable pane → STOP and ask the user to open a terminal in Workspace 1 and run `pi`, then send the task into it.
+- The TUI eats long pasted text and the command parser caps a line at ~**965 bytes**. So for any non-trivial pi prompt: write the full prompt to a temp markdown file in the repo (e.g. `.task-<name>.md`), then send the short line **into the live pane**: `Read ./.task-<name>.md and execute it fully.` (pi has repo file access via `-a`).
 - **Delete the temp `.md` file when the task is done.**
 
 ## CONTEXT MAP — the front door
@@ -33,8 +33,8 @@ agent (the Phase-1 scaffolding bugs happened because the rules weren't given up 
 | **`vue`** | touch `apps/extension/**` — components, stores, composables, content script, popup, tsconfig, or the extension typecheck/dev/build. |
 | **`nuxt`** | touch `apps/backend/server/**` or `nuxt.config.ts` — API routes, middleware, utils, BetterAuth, or the backend typecheck/dev/build. |
 | **`drizzle`** | change the DB schema or run migrations (`apps/backend/server/db/**`). Pairs with the DATABASE SCHEMA CHANGES rule below. |
-| **`fast-delegate`** | delegate a task headlessly to a pi agent (Gemini/DeepSeek/Qwen). |
-| **`call-agent`** | run an agent **live in a visible WMUX pane** (check `a2a_whoami` first). |
+| **`fast-delegate`** | decide WHERE to delegate — routes pi work to `call-agent` (live pane) and Claude work to the `Agent` tool. Headless pi is **deprecated/forbidden**. |
+| **`call-agent`** | delegate to a pi agent (Gemini/DeepSeek/Qwen) — **always live in a visible WMUX pane in Workspace 1**, never headless/background (check `a2a_whoami` first). |
 
 ## PLANNING MODE
 

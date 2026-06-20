@@ -56,20 +56,21 @@ reviews/integrates the result before reporting back.
 
 ## Fast delegation — how to actually run the `pi` agents (DeepSeek / Gemini / Qwen)
 
-Two modes. **Opus picks by default; the user can force either** ("just do it" = headless,
-"show me / let me watch" = live pane).
+> ⛔ **pi agents run LIVE in a WMUX pane in Workspace 1 — ONLY.** Never headless (`pi -p`),
+> never in the background (`run_in_background`, detached shell, `&`/jobs), never spawned from
+> the Bash/PowerShell tools. Asad must be able to watch a pi agent work in real time. If there
+> is no drivable pane, **STOP and ask Asad to open a terminal in Workspace 1 and run `pi`**, then
+> call into it — there is no headless fallback. See the `call-agent` skill and memory
+> [[pi-agents-live-pane-only]].
 
-- **Headless (DEFAULT — fastest).** One-shot, no TUI, no terminal-scraping, no polling:
-  ```
-  pi -a -p "<task>"        # runs in cwd, does the work, prints the result, exits
-  ```
-  Opus captures stdout directly. The run **blocks until done**, so there is no spinner to
-  poll. Add `--provider/--model` only to override the defaults (vertex / gemini-3.5-flash).
-  Use this for almost everything.
+- **Live pane (the ONLY mode for pi agents).** Interactive TUI in a side WMUX pane via the
+  **`call-agent`** skill: find the pane, send the task (`terminal_send` + enter — for long tasks
+  write a temp `.md` and send `Read ./.task-X.md and execute it fully.`), then `terminal_read`
+  the result. Defaults: provider `vertex`, model `gemini-3.5-flash`; override per the roster.
 
-- **Watch in pi (only when asked).** Interactive TUI in a side WMUX pane (the old flow:
-  `terminal_send` the task, `terminal_read` the result). Use **only** when the user wants to
-  see the agent work live. It is slower and fragile (keystrokes get eaten by the TUI).
+- **Prefer the Claude `Agent` tool first.** For anything a Claude model can do (features,
+  refactors, docs, summaries), use `sonnet-engineer` / `haiku-util` — results return directly,
+  no pane needed. Reach for a pi agent only for Gemini/DeepSeek/Qwen specifically, and run it live.
 
 ### Environment prerequisites (already configured on this machine — don't re-diagnose)
 
@@ -83,8 +84,9 @@ Two modes. **Opus picks by default; the user can force either** ("just do it" = 
 ### Hard-won gotchas (this Windows box)
 
 - The **Bash tool is broken** here (`fork: Resource temporarily unavailable`, exit 254) and
-  `Start-Sleep` is blocked — so the `Monitor` tool can't pace waits. **Use headless `-p`**
-  (which blocks) instead of polling a live pane. Prefer **PowerShell** for shell work.
+  `Start-Sleep` is blocked — so the `Monitor` tool can't pace waits. That's NOT a reason to go
+  headless (forbidden — see above); just re-read the live pane after doing other useful work.
+  Prefer **PowerShell** for shell work.
 - For `git commit` messages, write the message to a temp file and use `git commit -F` —
   PowerShell mangles embedded quotes in `-m`.
 - When listing WMUX panes, **scope to your own workspace id** (from `a2a_whoami`); the active
