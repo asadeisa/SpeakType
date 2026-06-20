@@ -42,6 +42,22 @@ function _insertIntoInput(
 function _insertIntoContentEditable(el: HTMLElement, text: string): void {
   el.focus();
 
+  // After the (shadow-DOM) Accept button is clicked, the caret may no longer live
+  // inside this element. Ensure a collapsed selection sits in `el` before insertion,
+  // otherwise execCommand/Range would operate on the wrong context (or no-op).
+  const sel = window.getSelection();
+  const caretInEl =
+    sel &&
+    sel.rangeCount > 0 &&
+    el.contains(sel.getRangeAt(0).commonAncestorContainer);
+  if (sel && !caretInEl) {
+    const caret = document.createRange();
+    caret.selectNodeContents(el);
+    caret.collapse(false); // place caret at the end of the field
+    sel.removeAllRanges();
+    sel.addRange(caret);
+  }
+
   // execCommand('insertText') integrates with the browser's native undo stack (one-step undo)
   const success =
     typeof document.execCommand === 'function' &&

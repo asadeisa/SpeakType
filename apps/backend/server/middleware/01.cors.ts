@@ -32,9 +32,10 @@ export default defineEventHandler((event) => {
   if (isAllowed) {
     setResponseHeaders(event, {
       'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Headers': 'authorization, content-type',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+      'Access-Control-Max-Age': '600',
+      Vary: 'Origin',
     });
   }
 

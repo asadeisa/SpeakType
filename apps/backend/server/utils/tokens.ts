@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { SignJWT, jwtVerify } from 'jose';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Plan } from '@speaktype/shared';
 import { db, refreshTokens } from '~/server/db';
 
@@ -62,33 +62,48 @@ export async function issueRefreshToken(userId: string): Promise<string> {
   return raw;
 }
 
+export type RotationResult =
+  | { status: 'success'; userId: string }
+  | { status: 'reuse'; userId: string }
+  | null;
+
 /**
  * Look up a raw refresh token by hash, verify it is valid,
- * revoke it, and return the userId. Returns null if invalid.
+ * revoke it, and return the result.
  */
-export async function rotateRefreshToken(rawToken: string): Promise<{ userId: string } | null> {
+export async function rotateRefreshToken(rawToken: string): Promise<RotationResult> {
   const tokenHash = hashToken(rawToken);
 
   const rows = await db
     .select()
     .from(refreshTokens)
-    .where(and(eq(refreshTokens.tokenHash, tokenHash), eq(refreshTokens.revoked, false)))
+    .where(eq(refreshTokens.tokenHash, tokenHash))
     .limit(1);
 
   const row = rows[0];
   if (!row) return null;
 
-  // Check expiry
+  // 1. Check if already revoked (Replay attack detected!)
+  if (row.revoked) {
+    await db
+      .update(refreshTokens)
+      .set({ revoked: true })
+      .where(eq(refreshTokens.userId, row.userId));
+
+    return { status: 'reuse', userId: row.userId };
+  }
+
+  // 2. Check expiry
   if (new Date(row.expiresAt) < new Date()) {
     // Expired — revoke it anyway
     await db.update(refreshTokens).set({ revoked: true }).where(eq(refreshTokens.id, row.id));
     return null;
   }
 
-  // Revoke this token
+  // 3. Happy path: valid, unrevoked, unexpired -> rotate (revoke old, issue new)
   await db.update(refreshTokens).set({ revoked: true }).where(eq(refreshTokens.id, row.id));
 
-  return { userId: row.userId };
+  return { status: 'success', userId: row.userId };
 }
 
 /** Mark a refresh token row as revoked. */

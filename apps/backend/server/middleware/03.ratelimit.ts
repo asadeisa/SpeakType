@@ -1,32 +1,26 @@
-import { defineEventHandler } from 'h3';
-import { Redis } from '@upstash/redis';
+import { defineEventHandler, setResponseHeader } from 'h3';
 import { RATE_LIMIT_PER_HOUR } from '@speaktype/shared';
 import { fail } from '../utils/respond';
 
-let redis: Redis | null = null;
+/**
+ * In-memory fixed-window rate limiter — PROCESS-LOCAL.
+ *
+ * Correct for the single-instance MVP. For multi-instance / edge scale the documented path is
+ * Upstash Redis (deferred): swapping it in means replacing ONLY this store, the handler logic
+ * below stays identical. Do not add Redis here in this phase.
+ */
+type Window = { count: number; resetAt: number };
+const store = new Map<string, Window>();
+const HOUR_MS = 60 * 60 * 1000;
 
-function getRedisClient() {
-  if (redis) return redis;
-
-  const config = useRuntimeConfig();
-  const url = config.upstashRedisRestUrl as string | undefined;
-  const token = config.upstashRedisRestToken as string | undefined;
-
-  if (!url || !token) {
-    console.warn('Upstash Redis credentials are missing from runtime config');
-    return null;
-  }
-
-  try {
-    redis = new Redis({ url, token });
-    return redis;
-  } catch (err) {
-    console.warn('Failed to initialize Redis client:', err);
-    return null;
+/** Drop expired windows so the Map can't grow unbounded. */
+function sweep(now: number): void {
+  for (const [key, win] of store) {
+    if (win.resetAt <= now) store.delete(key);
   }
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler((event) => {
   const path = event.path;
 
   // Early return for non-/api paths
@@ -39,42 +33,32 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  // Skip rate limiting if auth context is missing (e.g. public routes)
+  // Skip when there is no auth context (public routes / unauthenticated — 02.auth handles 401)
   const auth = event.context.auth as { userId: string; plan: 'free' | 'pro' } | undefined;
   if (!auth) {
     return;
   }
 
   const { userId, plan } = auth;
-  const limit = RATE_LIMIT_PER_HOUR[plan] || RATE_LIMIT_PER_HOUR.free;
+  const limit = RATE_LIMIT_PER_HOUR[plan] ?? RATE_LIMIT_PER_HOUR.free;
 
-  const client = getRedisClient();
-  if (!client) {
-    // Fail open
-    return;
+  const now = Date.now();
+  let win = store.get(userId);
+  if (!win || win.resetAt <= now) {
+    win = { count: 0, resetAt: now + HOUR_MS };
+    store.set(userId, win);
   }
 
-  // Format UTC date as YYYYMMDDHH
-  const now = new Date();
-  const yyyy = now.getUTCFullYear();
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(now.getUTCDate()).padStart(2, '0');
-  const hh = String(now.getUTCHours()).padStart(2, '0');
-  const timeSuffix = `${yyyy}${mm}${dd}${hh}`;
+  win.count += 1;
 
-  const key = `rl:${userId}:${timeSuffix}`;
+  if (win.count > limit) {
+    const retryAfter = Math.ceil((win.resetAt - now) / 1000);
+    setResponseHeader(event, 'Retry-After', retryAfter);
+    return fail(event, 429, 'Rate limit exceeded', 'RATE_LIMITED');
+  }
 
-  try {
-    const current = await client.incr(key);
-    if (current === 1) {
-      await client.expire(key, 3600);
-    }
-
-    if (current > limit) {
-      return fail(event, 429, 'Rate limit exceeded', 'RATE_LIMITED');
-    }
-  } catch (err) {
-    console.warn('Rate limiting Redis error (failing open):', err);
-    // Fail open
+  // Bound memory: opportunistic sweep once the map gets large.
+  if (store.size > 10_000) {
+    sweep(now);
   }
 });

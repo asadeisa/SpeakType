@@ -1,4 +1,4 @@
-import { api } from '@/services/api';
+import { api, ApiError } from '@/services/api';
 import { seedApiToken, watchAccessToken } from '@/services/auth-storage';
 import type { ApiProxyRequest, ApiProxyResponse } from '@/services/content-api';
 
@@ -56,7 +56,15 @@ export default defineBackground(() => {
               return { ok: false, error: 'Unknown API method' };
           }
         } catch (err) {
-          return { ok: false, error: err instanceof Error ? err.message : 'API call failed' };
+          // Errors don't survive runtime.sendMessage, so flatten the message but
+          // carry status/code as primitives — the content bridge rebuilds an
+          // ApiError so the UI can show a specific reason (401/402/502).
+          return {
+            ok: false,
+            error: err instanceof Error ? err.message : 'API call failed',
+            status: err instanceof ApiError ? err.status : undefined,
+            code: err instanceof ApiError ? err.code : undefined,
+          };
         }
       })();
     },
