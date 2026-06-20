@@ -23,7 +23,11 @@ export const SttGateway = {
       throw new Error(`Audio exceeds maximum size limit of ${MAX_AUDIO_BYTES} bytes.`);
     }
 
-    if (!(ALLOWED_AUDIO_MIME as readonly string[]).includes(audio.mime)) {
+    // Browsers tag recordings with codec params (e.g. `audio/webm;codecs=opus`); the
+    // allow-list holds bare types, so normalize to the base type before checking — same
+    // rule the audio route applies upstream.
+    const baseMime = (audio.mime.split(';')[0] ?? '').trim().toLowerCase();
+    if (!(ALLOWED_AUDIO_MIME as readonly string[]).includes(baseMime)) {
       throw new Error(`Audio mime type '${audio.mime}' is not allowed.`);
     }
 
@@ -37,9 +41,15 @@ export const SttGateway = {
     }
 
     try {
-      // 2. Build standard FormData body
+      // 2. Build standard FormData body.
+      // Two things Groq/Whisper is picky about:
+      //  - Content-Type must be the BARE type (`audio/webm`). The `;codecs=opus` suffix the
+      //    browser adds makes Groq fail to detect the container → 400 (surfaced to us as 502).
+      //  - The bytes must be a clean, un-pooled Uint8Array. A Node `Buffer` is a view onto a
+      //    shared pool; undici can mis-serialize that into the multipart body (truncated/empty
+      //    upload). Copy into a standalone Uint8Array so the file is sent intact.
       const formData = new FormData();
-      const blob = new Blob([audio.bytes as BlobPart], { type: audio.mime });
+      const blob = new Blob([new Uint8Array(audio.bytes)], { type: baseMime });
       formData.append('file', blob, audio.filename);
       formData.append('model', model);
       formData.append('response_format', 'json');

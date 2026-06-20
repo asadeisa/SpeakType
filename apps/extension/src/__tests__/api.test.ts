@@ -162,7 +162,7 @@ describe('SpeakTypeApiClient', () => {
     });
   });
 
-  describe('With Fallbacks (Try/Catch - Returns Fallback on Failure)', () => {
+  describe('Data methods (no stub fallback — errors propagate)', () => {
     describe('getQuota', () => {
       it('returns quota on success', async () => {
         const quota: Quota = { secondsUsed: 10, remainingSeconds: 50, plan: 'pro' };
@@ -172,15 +172,10 @@ describe('SpeakTypeApiClient', () => {
         expect(result).toEqual(quota);
       });
 
-      it('returns mock fallback quota on failure', async () => {
+      it('propagates errors instead of returning a stub', async () => {
         mockFetch.mockRejectedValue(new Error('Network disconnected'));
 
-        const result = await client.getQuota();
-        expect(result).toEqual({
-          secondsUsed: 120,
-          remainingSeconds: 1680,
-          plan: 'free',
-        });
+        await expect(client.getQuota()).rejects.toThrow('Network disconnected');
       });
     });
 
@@ -212,16 +207,10 @@ describe('SpeakTypeApiClient', () => {
         expect(fd.get('durationSeconds')).toBe('5.5');
       });
 
-      it('returns mock fallback transcription on failure', async () => {
+      it('propagates backend errors instead of returning a stub', async () => {
         mockFetch.mockRejectedValue(new Error('API quota reached'));
 
-        const result = await client.transcribe(audioBlob, 10);
-        expect(result).toEqual({
-          transcript: 'This is a stubbed transcription from SpeakTypeApiClient.',
-          provider: 'groq',
-          durationSeconds: 10,
-          requestId: '00000000-0000-0000-0000-000000000000',
-        });
+        await expect(client.transcribe(audioBlob, 10)).rejects.toThrow('API quota reached');
       });
     });
 
@@ -243,13 +232,10 @@ describe('SpeakTypeApiClient', () => {
         );
       });
 
-      it('returns mock fallback cleaned text on failure', async () => {
+      it('propagates errors instead of returning a stub', async () => {
         mockFetch.mockRejectedValue(new Error('Server error'));
 
-        const result = await client.cleanup('hello world', 'light');
-        expect(result).toEqual({
-          cleanedText: '[Cleaned (light)]: hello world',
-        });
+        await expect(client.cleanup('hello world', 'light')).rejects.toThrow('Server error');
       });
     });
 
@@ -267,16 +253,10 @@ describe('SpeakTypeApiClient', () => {
         expect(result).toEqual(settings);
       });
 
-      it('returns mock fallback settings on failure', async () => {
+      it('propagates errors instead of returning a stub', async () => {
         mockFetch.mockRejectedValue(new Error('Timeout'));
 
-        const result = await client.getSettings();
-        expect(result).toEqual({
-          language: 'auto',
-          preferredModel: 'gemini-flash',
-          autoCleanup: true,
-          requireConfirmation: true,
-        });
+        await expect(client.getSettings()).rejects.toThrow('Timeout');
       });
     });
 
@@ -297,16 +277,12 @@ describe('SpeakTypeApiClient', () => {
         expect(config.body).toBe(JSON.stringify({ language: 'en', requireConfirmation: false }));
       });
 
-      it('returns merged mock fallback on failure', async () => {
+      it('propagates errors instead of returning a stub', async () => {
         mockFetch.mockRejectedValue(new Error('Update failed'));
 
-        const result = await client.updateSettings({ language: 'ar', requireConfirmation: false });
-        expect(result).toEqual({
-          language: 'ar',
-          preferredModel: 'gemini-flash',
-          autoCleanup: true,
-          requireConfirmation: false,
-        });
+        await expect(
+          client.updateSettings({ language: 'ar', requireConfirmation: false }),
+        ).rejects.toThrow('Update failed');
       });
     });
   });

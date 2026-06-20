@@ -8,6 +8,7 @@
  * CORS. (The popup runs in an extension page and keeps calling `api` directly.)
  */
 import { browser } from 'wxt/browser';
+import { ApiError } from '@/services/api';
 import type {
   AudioResponse,
   CleanupResponse,
@@ -37,12 +38,19 @@ export type ApiProxyRequest =
       websiteContext?: string;
     };
 
-export type ApiProxyResponse = { ok: true; data: unknown } | { ok: false; error: string };
+export type ApiProxyResponse =
+  | { ok: true; data: unknown }
+  | { ok: false; error: string; status?: number; code?: string };
 
 async function send<T>(req: ApiProxyRequest): Promise<T> {
   const res = (await browser.runtime.sendMessage(req)) as ApiProxyResponse | undefined;
   if (!res || res.ok !== true) {
-    throw new Error(res && res.ok === false ? res.error : 'Background API call failed');
+    const message = res && res.ok === false ? res.error : 'Background API call failed';
+    const status = res && res.ok === false ? (res.status ?? 0) : 0;
+    const code = res && res.ok === false ? res.code : undefined;
+    // Rebuild a typed error so the content script can branch on the HTTP status
+    // (the original ApiError was lost crossing the runtime.sendMessage boundary).
+    throw new ApiError(message, status, code);
   }
   return res.data as T;
 }

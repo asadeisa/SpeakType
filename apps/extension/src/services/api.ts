@@ -20,6 +20,24 @@ import type {
   User,
 } from '@speaktype/shared';
 
+/**
+ * Thrown for any non-2xx backend response. Carries the HTTP `status` (and the
+ * backend error `code` when present) so callers can show a specific message —
+ * "sign in" for 401, "quota" for 402, "service down" for 502 — instead of a
+ * generic failure. Errors don't survive `runtime.sendMessage`, so the background
+ * proxy re-emits these fields and the content bridge reconstructs an ApiError.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export class SpeakTypeApiClient {
   private baseUrl: string;
   private token: string | null = null;
@@ -61,7 +79,20 @@ export class SpeakTypeApiClient {
     const response = await fetch(url, config);
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText} (${response.status})`);
+      // Surface the backend's error code (when present) alongside the HTTP status
+      // so callers can show a specific message instead of a generic failure.
+      let code: string | undefined;
+      try {
+        const body = (await response.json()) as { code?: string };
+        code = body?.code;
+      } catch {
+        // Non-JSON error body — the status alone will have to do.
+      }
+      throw new ApiError(
+        `API Error: ${response.statusText} (${response.status})`,
+        response.status,
+        code,
+      );
     }
 
     return response.json() as Promise<T>;
@@ -113,16 +144,10 @@ export class SpeakTypeApiClient {
   // ----------------------------- Usage / quota -------------------------------
 
   async getQuota(): Promise<Quota> {
-    try {
-      return await this.request<Quota>(API_ROUTES.usage.quota);
-    } catch {
-      // Mocked fallback per stub requirements
-      return {
-        secondsUsed: 120,
-        remainingSeconds: 1680,
-        plan: 'free',
-      };
-    }
+    // No silent fallback — a 401/network error must surface so the UI can prompt
+    // sign-in instead of pretending the user has quota (which let recording start
+    // and then failed at upload).
+    return this.request<Quota>(API_ROUTES.usage.quota);
   }
 
   async transcribe(
@@ -130,24 +155,16 @@ export class SpeakTypeApiClient {
     durationSeconds: number,
     language?: Language,
   ): Promise<AudioResponse> {
-    try {
-      const formData = new FormData();
-      formData.append('audio', audioBlob);
-      if (language) {
-        formData.append('language', language);
-      }
-      formData.append('durationSeconds', durationSeconds.toString());
-
-      return await this.request<AudioResponse>(API_ROUTES.audio.transcribe, formData);
-    } catch {
-      // Mocked fallback per stub requirements
-      return {
-        transcript: 'This is a stubbed transcription from SpeakTypeApiClient.',
-        provider: 'groq',
-        durationSeconds,
-        requestId: '00000000-0000-0000-0000-000000000000',
-      };
+    const formData = new FormData();
+    // Groq needs a filename with a real extension to detect the audio container.
+    formData.append('audio', audioBlob, 'audio.webm');
+    if (language) {
+      formData.append('language', language);
     }
+    formData.append('durationSeconds', durationSeconds.toString());
+
+    // No silent stub fallback — let real backend errors propagate so the UI surfaces them.
+    return this.request<AudioResponse>(API_ROUTES.audio.transcribe, formData);
   }
 
   async cleanup(
@@ -155,46 +172,25 @@ export class SpeakTypeApiClient {
     cleanupMode: CleanupMode,
     websiteContext?: string,
   ): Promise<CleanupResponse> {
-    try {
-      return await this.request<CleanupResponse>(API_ROUTES.cleanup.run, {
-        transcript,
-        cleanupMode,
-        websiteContext,
-      });
-    } catch {
-      // Mocked fallback per stub requirements
-      return {
-        cleanedText: `[Cleaned (${cleanupMode})]: ${transcript}`,
-      };
-    }
+    // Let failures throw — the caller (content.ts) already falls back to the raw
+    // transcript on error, so a stub here would mask a broken cleanup with a
+    // fake "[Cleaned]" prefix that the user can't tell apart from a real result.
+    return this.request<CleanupResponse>(API_ROUTES.cleanup.run, {
+      transcript,
+      cleanupMode,
+      websiteContext,
+    });
   }
 
   async getSettings(): Promise<Settings> {
-    try {
-      return await this.request<Settings>(API_ROUTES.settings.get);
-    } catch {
-      // Mocked fallback per stub requirements
-      return {
-        language: 'auto',
-        preferredModel: 'gemini-flash',
-        autoCleanup: true,
-        requireConfirmation: true,
-      };
-    }
+    // Throws on failure; callers decide whether to fall back to local defaults
+    // (and they log when they do, so a sync failure isn't invisible).
+    return this.request<Settings>(API_ROUTES.settings.get);
   }
 
   async updateSettings(settings: UpdateSettingsInput): Promise<Settings> {
-    try {
-      return await this.request<Settings>(API_ROUTES.settings.update, settings);
-    } catch {
-      // Mocked fallback per stub requirements
-      return {
-        language: settings.language ?? 'auto',
-        preferredModel: settings.preferredModel ?? 'gemini-flash',
-        autoCleanup: settings.autoCleanup ?? true,
-        requireConfirmation: settings.requireConfirmation ?? true,
-      };
-    }
+    // Throws on failure so a save that didn't persist can't look successful.
+    return this.request<Settings>(API_ROUTES.settings.update, settings);
   }
 }
 

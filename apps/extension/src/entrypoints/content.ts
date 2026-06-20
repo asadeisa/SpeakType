@@ -5,6 +5,7 @@ import {
   cleanupViaBackground,
   getSettingsViaBackground,
 } from '@/services/content-api';
+import { ApiError } from '@/services/api';
 import { useRecorderStore } from '@/stores/recorder';
 import { useSettingsStore } from '@/stores/settings';
 import { useRecorder } from '@/composables/useRecorder';
@@ -118,6 +119,27 @@ function maybeDetachAfterPreview(): void {
   }, 150);
 }
 
+/**
+ * Map a failed backend call to a specific, user-facing message. Without this
+ * every failure flattened to "Upload failed. Tap to retry." — which is exactly
+ * what hid the broken voice pipeline for so long. (Finding 2.4.)
+ */
+function messageForError(err: unknown): string {
+  const status = err instanceof ApiError ? err.status : undefined;
+  switch (status) {
+    case 401:
+      return 'Please sign in to SpeakType.';
+    case 402:
+      return 'Quota exhausted. Tap to upgrade.';
+    case 413:
+      return 'Recording too long. Try a shorter clip.';
+    case 502:
+      return 'Transcription service is down. Tap to retry.';
+    default:
+      return 'Upload failed. Tap to retry.';
+  }
+}
+
 // ──────────────────────────────────────────────
 // Core toggle: start → stop → transcribe → insert
 // ──────────────────────────────────────────────
@@ -155,10 +177,12 @@ async function uploadAndApply(
     _retainedBlob = null;
 
     if (settings.requireConfirmation) {
-      // Show inline preview — await user action
+      // Show inline preview — await user action. Reset the mic state so the
+      // "uploading" spinner stops while the review card waits for the user.
       _pendingTranscript.value = transcript;
       _showPreview.value = true;
       if (targetField) _pendingTargetField = targetField;
+      recorderStore.reset();
       await new Promise<void>((resolve) => {
         _resolveConfirm = resolve;
       });
@@ -169,14 +193,18 @@ async function uploadAndApply(
       recorderStore.setSuccess();
       setTimeout(() => recorderStore.reset(), 1500);
     }
-  } catch {
-    recorderStore.setError('Upload failed. Tap to retry.');
+  } catch (err) {
+    recorderStore.setError(messageForError(err));
     // Blob kept in _retainedBlob so the next tap retries the same upload.
   }
 }
 
 async function runToggle(activeField: HTMLElement): Promise<void> {
   const recorderStore = useRecorderStore(pinia);
+
+  // Ignore taps while an upload/transcription is in flight — prevents overlapping
+  // recordings from corrupting the state machine.
+  if (recorderStore.currentState === 'uploading') return;
 
   if (_recording) {
     // ── Stop ──
@@ -203,9 +231,20 @@ async function runToggle(activeField: HTMLElement): Promise<void> {
   }
 
   // ── Start a fresh recording ──
-  const { allowed, quota } = await quotaHelper.checkQuota();
-  if (!allowed) {
-    recorderStore.setError(`Quota exhausted (${quota.remainingSeconds}s remaining).`);
+  // getQuota no longer returns a fake positive on failure, so a logged-out or
+  // offline user is caught HERE instead of recording and failing at upload.
+  try {
+    const { allowed, quota } = await quotaHelper.checkQuota();
+    if (!allowed) {
+      recorderStore.setError(`Quota exhausted (${quota.remainingSeconds}s remaining).`);
+      return;
+    }
+  } catch (err) {
+    recorderStore.setError(
+      err instanceof ApiError && err.status === 401
+        ? 'Please sign in to SpeakType.'
+        : 'Could not reach SpeakType. Check your connection.',
+    );
     return;
   }
 
@@ -344,10 +383,35 @@ function onFocusOut(): void {
   }, 120);
 }
 
+/**
+ * Clear the module-level flow state so a torn-down mic never leaks a retained
+ * retry blob, a stale target field, or an open preview card onto the next field
+ * the user focuses (which previously inserted text into the OLD field).
+ * Findings 2.2 / 2.3. Caller guarantees we're not mid-recording.
+ */
+function resetFlowState(): void {
+  _retainedBlob = null;
+  _retainedDuration = 0;
+  _targetField = null;
+  _websiteContext = '';
+  _showPreview.value = false;
+  _pendingTranscript.value = '';
+  _pendingTargetField = null;
+  // Resolve any hanging confirmation promise so uploadAndApply doesn't leak it.
+  _resolveConfirm?.();
+  _resolveConfirm = null;
+  useRecorderStore(pinia).reset();
+}
+
 function detachMic(): void {
   _currentMount?.destroy();
   _currentMount = null;
   _activeField = null;
+  // Only reset when idle — an active MediaRecorder is owned by its own stop()
+  // path, and there's no cancel API to tear it down cleanly here.
+  if (!_recording) {
+    resetFlowState();
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -460,8 +524,10 @@ export default defineContentScript({
     try {
       const remoteSettings = await getSettingsViaBackground();
       useSettingsStore(pinia).setSettings(remoteSettings);
-    } catch {
-      // Use default store values
+    } catch (err) {
+      // Fall back to local defaults, but don't do it silently — a sync failure
+      // here should be visible in the console for debugging. (Findings 2.6/2.7.)
+      console.warn('[SpeakType] Could not load remote settings; using defaults.', err);
     }
 
     // Attach focus/blur listeners

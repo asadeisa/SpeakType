@@ -1,29 +1,7 @@
 import { sql, eq, and, gte } from 'drizzle-orm';
 import { db, usageLogs, quotaEvents } from '~/server/db';
 import { QUOTA_SECONDS, type Plan, type SttProvider } from '@speaktype/shared';
-import { Redis } from '@upstash/redis';
-
-let redis: Redis | null = null;
-
-function getRedisClient() {
-  if (redis) return redis;
-
-  const config = useRuntimeConfig();
-  const url = config.upstashRedisRestUrl as string | undefined;
-  const token = config.upstashRedisRestToken as string | undefined;
-
-  if (!url || !token) {
-    return null;
-  }
-
-  try {
-    redis = new Redis({ url, token });
-    return redis;
-  } catch (err) {
-    console.warn('Failed to initialize Redis client in QuotaService:', err);
-    return null;
-  }
-}
+import { getRedisClient } from '~/server/utils/redis';
 
 /**
  * Retrieves the total seconds of transcription quota used by the user in the current UTC month.

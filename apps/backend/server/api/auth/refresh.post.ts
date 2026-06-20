@@ -1,5 +1,6 @@
 import { defineEventHandler } from 'h3';
 import { refreshSchema, authTokensSchema } from '@speaktype/shared';
+import { db, auditLogs } from '~/server/db';
 import { signAccessToken } from '~/server/utils/tokens';
 import { rotateRefreshToken, issueRefreshToken } from '~/server/utils/tokens';
 import { fail, validateBody, resolvePlan } from '~/server/utils/respond';
@@ -23,6 +24,19 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!rotated) {
+    return fail(event, 401, 'Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN');
+  }
+
+  if (rotated.status === 'reuse') {
+    try {
+      await db.insert(auditLogs).values({
+        userId: rotated.userId,
+        action: 'refresh_token_reuse',
+        detail: 'Refresh token replay detected. Revoked all tokens for user.',
+      });
+    } catch (auditErr) {
+      console.error('Failed to log refresh token reuse audit log:', auditErr);
+    }
     return fail(event, 401, 'Invalid or expired refresh token', 'INVALID_REFRESH_TOKEN');
   }
 

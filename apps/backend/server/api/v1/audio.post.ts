@@ -1,4 +1,4 @@
-import { defineEventHandler, readMultipartFormData } from 'h3';
+import { defineEventHandler, readMultipartFormData, getRequestHeader } from 'h3';
 import { getAuth, fail } from '~/server/utils/respond';
 import { SttGateway, SttUnavailableError } from '~/server/services/stt';
 import { QuotaService } from '~/server/services/quota';
@@ -13,6 +13,15 @@ import {
 
 export default defineEventHandler(async (event) => {
   const { userId } = getAuth(event);
+
+  // Early size guard — BEFORE readMultipartFormData
+  const contentLengthStr = getRequestHeader(event, 'content-length');
+  if (contentLengthStr) {
+    const contentLength = parseInt(contentLengthStr, 10);
+    if (!isNaN(contentLength) && contentLength > MAX_AUDIO_BYTES) {
+      return fail(event, 413, 'Audio file exceeds maximum size limit', 'PAYLOAD_TOO_LARGE');
+    }
+  }
 
   // 1. Parse and extract multipart fields
   const multipart = await readMultipartFormData(event);
@@ -67,7 +76,10 @@ export default defineEventHandler(async (event) => {
     return fail(event, 413, 'Audio file exceeds maximum size limit', 'PAYLOAD_TOO_LARGE');
   }
 
-  if (!(ALLOWED_AUDIO_MIME as readonly string[]).includes(audioPart.type)) {
+  // Browsers send the full media type with codec params (e.g. `audio/webm;codecs=opus`);
+  // validate against the base type so the codec suffix doesn't trip the allow-list.
+  const baseMime = (audioPart.type.split(';')[0] ?? '').trim().toLowerCase();
+  if (!(ALLOWED_AUDIO_MIME as readonly string[]).includes(baseMime)) {
     return fail(
       event,
       400,
